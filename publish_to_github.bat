@@ -15,8 +15,8 @@ echo Adding remote origin...
 :: We use 2>nul to ignore the error if the remote already exists
 git remote add origin https://github.com/naivedyamishra326-hash/convertx-.git 2>nul
 
-echo Pushing to GitHub...
-git push -u origin main
+echo Pushing to GitHub (forcing overwrite of remote boilerplate)...
+git push -u origin main --force
 
 echo.
 echo ========================================================
