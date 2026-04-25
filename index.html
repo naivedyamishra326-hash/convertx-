@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConvertX — MOV & H.264 to MP4 Converter</title>
+    <meta name="description" content="Free browser-based video converter. Convert MOV and H.264 files to MP4 instantly — no uploads, fully private. Supports bulk conversion.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Header -->
+    <header id="app-header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 40 40" fill="none">
+                        <rect x="2" y="2" width="36" height="36" rx="8" stroke="url(#logoGrad)" stroke-width="2.5"/>
+                        <polygon points="16,12 16,28 30,20" fill="url(#logoGrad)"/>
+                        <defs>
+                            <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+                                <stop offset="0%" stop-color="#a78bfa"/>
+                                <stop offset="100%" stop-color="#06b6d4"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="logo-text">Convert<span class="logo-accent">X</span></span>
+            </div>
+            <nav class="header-nav">
+                <span class="nav-badge">100% Private</span>
+                <span class="nav-badge">No Upload</span>
+                <span class="nav-badge bulk-badge">Bulk Convert</span>
+                <span class="nav-badge">Free</span>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="app-main">
+        <!-- Hero Section -->
+        <section class="hero" id="hero-section">
+            <h1 class="hero-title">
+                <span class="hero-line">Convert Your Videos</span>
+                <span class="hero-line hero-gradient">MOV & H.264 → MP4</span>
+            </h1>
+            <p class="hero-subtitle">
+                Lightning-fast, browser-based conversion. Your files never leave your device.<br>
+                <strong>Now with bulk conversion — drop multiple files at once.</strong>
+            </p>
+        </section>
+
+        <!-- Converter Card -->
+        <section class="converter-card" id="converter-card">
+            <!-- Drop Zone -->
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone-inner">
+                    <div class="dropzone-icon" id="dropzone-icon">
+                        <svg viewBox="0 0 64 64" fill="none">
+                            <rect x="4" y="4" width="56" height="56" rx="16" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/>
+                            <path d="M32 20v24M20 32h24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <p class="dropzone-title">Drop your videos here</p>
+                    <p class="dropzone-subtitle">or click to browse — MOV, H.264, MKV, AVI, WEBM · <strong>Multiple files supported</strong></p>
+                    <input type="file" id="file-input" accept="video/*,.mov,.mp4,.mkv,.avi,.webm,.h264,.264,.ts,.m2ts,.m4v,.3gp,.flv,.wmv" multiple hidden>
+                </div>
+                <div class="dropzone-border"></div>
+            </div>
+
+            <!-- File Queue Panel (hidden by default) -->
+            <div class="file-queue-panel" id="file-queue-panel" style="display:none;">
+                <!-- Global Settings -->
+                <div class="settings-row">
+                    <div class="setting-group">
+                        <label class="setting-label" for="output-quality">Quality</label>
+                        <select id="output-quality" class="setting-select">
+                            <option value="auto" selected>⚡ Auto (Fastest — try copy first)</option>
+                            <option value="copy">Copy Only (No Re-encode)</option>
+                            <option value="high">Re-encode High (CRF 18, slow)</option>
+                            <option value="medium">Re-encode Medium (CRF 23, slow)</option>
+                            <option value="low">Re-encode Low (CRF 28, faster)</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label class="setting-label" for="output-resolution">Resolution</label>
+                        <select id="output-resolution" class="setting-select">
+                            <option value="original" selected>Original</option>
+                            <option value="1080">1080p</option>
+                            <option value="720">720p</option>
+                            <option value="480">480p</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- File list -->
+                <div class="file-list" id="file-list"></div>
+
+                <!-- Actions -->
+                <div class="queue-actions">
+                    <button class="btn-add-more" id="btn-add-more" title="Add more files">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 3a.75.75 0 01.75.75v5.5h5.5a.75.75 0 010 1.5h-5.5v5.5a.75.75 0 01-1.5 0v-5.5h-5.5a.75.75 0 010-1.5h5.5v-5.5A.75.75 0 0110 3z"/></svg>
+                        Add More
+                    </button>
+                    <button class="btn-clear-all" id="btn-clear-all">Clear All</button>
+                    <button class="btn-convert" id="btn-convert">
+                        <span class="btn-convert-text" id="btn-convert-text">Convert All to MP4</span>
+                        <span class="btn-convert-spinner" id="btn-convert-spinner" style="display:none;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+                                <path d="M12 2a10 10 0 0110 10" stroke="#fff" stroke-width="3" stroke-linecap="round" class="spinner-arc"/>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bulk Done Panel (hidden by default) -->
+            <div class="done-panel" id="done-panel" style="display:none;">
+                <div class="done-check">
+                    <svg viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="28" fill="url(#doneGrad)" opacity="0.12"/>
+                        <circle cx="32" cy="32" r="28" stroke="url(#doneGrad)" stroke-width="2.5"/>
+                        <path d="M20 33l8 8 16-18" stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="check-path"/>
+                        <defs>
+                            <linearGradient id="doneGrad" x1="0" y1="0" x2="64" y2="64">
+                                <stop offset="0%" stop-color="#34d399"/>
+                                <stop offset="100%" stop-color="#06b6d4"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <p class="done-title" id="done-title">All Conversions Complete!</p>
+                <p class="done-subtitle" id="done-subtitle"></p>
+                <div class="done-file-list" id="done-file-list"></div>
+                <div class="done-actions">
+                    <button class="btn-download" id="btn-download-all">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a.75.75 0 01.75.75v7.69l2.72-2.72a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-1.06 0l-4-4a.75.75 0 011.06-1.06l2.72 2.72V3.75A.75.75 0 0110 3z"/><path d="M3 15.75a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z"/></svg>
+                        Download All as ZIP
+                    </button>
+                    <button class="btn-another" id="btn-another">Convert More</button>
+                </div>
+            </div>
+
+            <!-- Error Panel -->
+            <div class="error-panel" id="error-panel" style="display:none;">
+                <div class="error-icon">⚠️</div>
+                <p class="error-title">Conversion Failed</p>
+                <p class="error-detail" id="error-detail">An unexpected error occurred.</p>
+                <button class="btn-another" id="btn-retry">Try Again</button>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features-section">
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>100% Private</h3>
+                <p>All processing happens in your browser. No files are uploaded to any server.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>Powered by FFmpeg WebAssembly for near-native conversion speeds.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <h3>Bulk Convert</h3>
+                <p>Drop multiple files at once. Process them all in a queue with individual progress tracking.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer id="app-footer">
+        <p>ConvertX — Built with FFmpeg.wasm · Runs entirely in your browser · Bulk conversion supported</p>
+    </footer>
+
+    <!-- FFmpeg.wasm + JSZip for bulk downloads -->
+    <script src="coi-serviceworker.js"></script>
+    <script src="ffmpeg/ffmpeg.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
