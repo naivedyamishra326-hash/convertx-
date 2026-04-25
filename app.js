@@ -348,15 +348,23 @@
     }
 
     // ── FFmpeg Loading ──────────────────────────
-    // FIX: The original code referenced FFmpegWASM directly but the
-    // bundled ffmpeg.js exposes it as a UMD global. We ensure we access
-    // it correctly and handle the case where it's not loaded.
+    // Uses CDN + Blob URLs to bypass CORS/COEP/SharedArrayBuffer issues
+    // on static hosts like GitHub Pages. Single-threaded core doesn't
+    // need SharedArrayBuffer at all.
+
+    async function toBlobURL(url, mimeType) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobWithType = new Blob([blob], { type: mimeType });
+        return URL.createObjectURL(blobWithType);
+    }
+
     async function loadFFmpeg() {
         if (ffmpegLoaded && ffmpegInstance) return ffmpegInstance;
 
         if (typeof FFmpegWASM === 'undefined') {
             throw new Error(
-                'FFmpeg library not loaded. Make sure ffmpeg.js is included and the server is running with proper CORS headers.'
+                'FFmpeg library not loaded. Make sure ffmpeg.js is included.'
             );
         }
 
@@ -364,13 +372,11 @@
         const ffmpeg = new FFmpeg();
 
         ffmpeg.on('log', ({ message }) => {
-            // Log for debugging
             console.log('[FFmpeg]', message);
         });
 
         ffmpeg.on('progress', ({ progress }) => {
             const pct = Math.min(Math.round(progress * 100), 100);
-            // We'll update the active item's progress
             const active = fileQueue.find(f => f.status === 'processing');
             if (active) {
                 active.progress = pct;
@@ -378,11 +384,25 @@
             }
         });
 
-        // FIX: Use relative paths so it works on GitHub Pages
-        await ffmpeg.load({
-            coreURL: 'ffmpeg/ffmpeg-core.js',
-            wasmURL: 'ffmpeg/ffmpeg-core.wasm',
-        });
+        // Load ffmpeg-core from CDN as Blob URLs to avoid CORS/path issues
+        const CDN_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
+
+        try {
+            console.log('[ConvertX] Loading FFmpeg core from CDN...');
+            const coreURL = await toBlobURL(`${CDN_BASE}/ffmpeg-core.js`, 'text/javascript');
+            const wasmURL = await toBlobURL(`${CDN_BASE}/ffmpeg-core.wasm`, 'application/wasm');
+
+            await ffmpeg.load({ coreURL, wasmURL });
+            console.log('[ConvertX] ✅ FFmpeg loaded from CDN');
+        } catch (cdnErr) {
+            console.warn('[ConvertX] CDN load failed, trying local files...', cdnErr);
+            // Fallback to local files (works on localhost with proper headers)
+            await ffmpeg.load({
+                coreURL: 'ffmpeg/ffmpeg-core.js',
+                wasmURL: 'ffmpeg/ffmpeg-core.wasm',
+            });
+            console.log('[ConvertX] ✅ FFmpeg loaded from local files');
+        }
 
         ffmpegInstance = ffmpeg;
         ffmpegLoaded = true;
