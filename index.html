@@ -9,6 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script>
+    // Force-unregister any stale service workers that cache old files
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (var reg of registrations) { reg.unregister(); }
+        });
+    }
+    </script>
 </head>
 <body>
     <!-- Animated background -->
@@ -186,9 +194,8 @@
     </footer>
 
     <!-- FFmpeg.wasm + JSZip for bulk downloads -->
-    <script src="coi-serviceworker.js?v=5"></script>
-    <script src="ffmpeg/ffmpeg.js?v=5"></script>
+    <script src="ffmpeg/ffmpeg.js?v=6"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>
