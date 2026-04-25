@@ -348,15 +348,14 @@
     }
 
     // ── FFmpeg Loading ──────────────────────────
-    // Uses CDN + Blob URLs to bypass CORS/COEP/SharedArrayBuffer issues
-    // on static hosts like GitHub Pages. Single-threaded core doesn't
-    // need SharedArrayBuffer at all.
+    // Loads everything from CDN as Blob URLs to completely bypass
+    // CORS, COEP, hardcoded paths, and caching issues on GitHub Pages.
 
     async function toBlobURL(url, mimeType) {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobWithType = new Blob([blob], { type: mimeType });
-        return URL.createObjectURL(blobWithType);
+        const buf = await response.arrayBuffer();
+        const blob = new Blob([buf], { type: mimeType });
+        return URL.createObjectURL(blob);
     }
 
     async function loadFFmpeg() {
@@ -384,25 +383,15 @@
             }
         });
 
-        // Load ffmpeg-core from CDN as Blob URLs to avoid CORS/path issues
-        const CDN_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
+        // Load ALL ffmpeg files from CDN as Blob URLs
+        const CORE_CDN = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
 
-        try {
-            console.log('[ConvertX] Loading FFmpeg core from CDN...');
-            const coreURL = await toBlobURL(`${CDN_BASE}/ffmpeg-core.js`, 'text/javascript');
-            const wasmURL = await toBlobURL(`${CDN_BASE}/ffmpeg-core.wasm`, 'application/wasm');
+        console.log('[ConvertX] Loading FFmpeg core from CDN...');
+        const coreURL = await toBlobURL(`${CORE_CDN}/ffmpeg-core.js`, 'text/javascript');
+        const wasmURL = await toBlobURL(`${CORE_CDN}/ffmpeg-core.wasm`, 'application/wasm');
 
-            await ffmpeg.load({ coreURL, wasmURL });
-            console.log('[ConvertX] ✅ FFmpeg loaded from CDN');
-        } catch (cdnErr) {
-            console.warn('[ConvertX] CDN load failed, trying local files...', cdnErr);
-            // Fallback to local files (works on localhost with proper headers)
-            await ffmpeg.load({
-                coreURL: 'ffmpeg/ffmpeg-core.js',
-                wasmURL: 'ffmpeg/ffmpeg-core.wasm',
-            });
-            console.log('[ConvertX] ✅ FFmpeg loaded from local files');
-        }
+        await ffmpeg.load({ coreURL, wasmURL });
+        console.log('[ConvertX] ✅ FFmpeg loaded successfully');
 
         ffmpegInstance = ffmpeg;
         ffmpegLoaded = true;
