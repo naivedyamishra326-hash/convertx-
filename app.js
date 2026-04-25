@@ -382,7 +382,7 @@
         await ffmpeg.load({
             coreURL: 'ffmpeg/ffmpeg-core.js',
             wasmURL: 'ffmpeg/ffmpeg-core.wasm',
-            workerURL: 'ffmpeg/814.ffmpeg.js'
+            classWorkerURL: 'ffmpeg/814.ffmpeg.js'
         });
 
         ffmpegInstance = ffmpeg;
